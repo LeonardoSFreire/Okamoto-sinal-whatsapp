@@ -8,6 +8,11 @@ out-tsc
 .expo
 .expo-shared
 
+# environment variables / secrets
+.env
+.env.*
+!.env.example
+
 # dependencies
 node_modules
 
