@@ -10,6 +10,14 @@ create extension if not exists pgcrypto;
 -- Plain Postgres compatibility outside Supabase: some legacy policies depend on
 -- auth.uid(). When running in Easypanel/Postgres directly, provide a minimal
 -- stub so the migration remains valid even without the Supabase auth schema.
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin;
+  end if;
+end
+$$;
+
 create schema if not exists auth;
 create or replace function auth.uid() returns uuid
   language sql stable
