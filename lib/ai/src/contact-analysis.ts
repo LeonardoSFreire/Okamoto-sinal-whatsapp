@@ -1,12 +1,12 @@
 import OpenAI from "openai";
-import { CLASSIFY_MODEL } from "./classify";
+import { CLASSIFY_MODEL, aiClientOptions } from "./classify";
 
 let client: OpenAI | null = null;
 function getClient(): OpenAI {
   if (!client) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY is required.");
-    client = new OpenAI({ apiKey });
+    client = new OpenAI({ apiKey, ...aiClientOptions() });
   }
   return client;
 }

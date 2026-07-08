@@ -25,6 +25,20 @@ export const OPENROUTER_CLASSIFY_MODEL = "deepseek/deepseek-chat-v3-0324";
 
 type Provider = "openai" | "openrouter";
 
+function positiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 ? n : fallback;
+}
+
+export function aiClientOptions(): { timeout: number; maxRetries: number } {
+  return {
+    timeout: positiveIntEnv("OPENAI_TIMEOUT_MS", 45_000),
+    maxRetries: positiveIntEnv("OPENAI_MAX_RETRIES", 0),
+  };
+}
+
 /** Active provider for classifyBatch, selected via CLASSIFY_PROVIDER env. */
 export function activeProvider(): Provider {
   return process.env.CLASSIFY_PROVIDER === "openrouter" ? "openrouter" : "openai";
@@ -51,14 +65,14 @@ function getClient(provider: Provider): OpenAI {
           "AI_INTEGRATIONS_OPENROUTER_BASE_URL / _API_KEY are required for OpenRouter.",
         );
       }
-      openrouterClient = new OpenAI({ baseURL, apiKey });
+      openrouterClient = new OpenAI({ baseURL, apiKey, ...aiClientOptions() });
     }
     return openrouterClient;
   }
   if (!openaiClient) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY is required.");
-    openaiClient = new OpenAI({ apiKey });
+    openaiClient = new OpenAI({ apiKey, ...aiClientOptions() });
   }
   return openaiClient;
 }
