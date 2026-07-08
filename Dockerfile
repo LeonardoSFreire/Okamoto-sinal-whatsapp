@@ -4,6 +4,9 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 
+ENV PORT=8080
+ENV BASE_PATH=/
+
 COPY . .
 
 RUN pnpm install --frozen-lockfile
