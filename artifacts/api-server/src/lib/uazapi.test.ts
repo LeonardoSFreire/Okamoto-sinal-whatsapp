@@ -107,4 +107,35 @@ describe("uazapi webhook normalization", () => {
     expect(normalized?.contactPhone).toBe("559183261468");
     expect(normalized?.metadata.raw_type).toBe("Conversation");
   });
+
+  it("extracts media URLs from the real UAZAPI content.URL field", () => {
+    const normalized = normalizeUazapiWebhookMessage(
+      {
+        EventType: "messages",
+        message: {
+          id: "559196086820:3BAE1693CC13956BED1A",
+          chatid: "120363421028550337@g.us",
+          fromMe: false,
+          isGroup: true,
+          messageid: "3BAE1693CC13956BED1A",
+          sender_pn: "5511915389138@s.whatsapp.net",
+          senderName: "Tech Promos 14",
+          messageType: "ImageMessage",
+          messageTimestamp: 1_783_475_300_000,
+          content: {
+            URL: "https://mmg.whatsapp.net/example.jpg",
+            mimetype: "image/jpeg",
+            caption: "Legenda",
+          },
+        },
+      },
+      "559196086820",
+    );
+
+    expect(normalized).not.toBeNull();
+    expect(normalized?.chatType).toBe("group");
+    expect(normalized?.mediaUrl).toBe("https://mmg.whatsapp.net/example.jpg");
+    expect(normalized?.mediaMimeType).toBe("image/jpeg");
+    expect(normalized?.caption).toBe("Legenda");
+  });
 });

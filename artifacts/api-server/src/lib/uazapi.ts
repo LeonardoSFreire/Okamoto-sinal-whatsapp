@@ -107,6 +107,7 @@ function inferMediaUrl(data: Record<string, unknown>): string | null {
     asString(data.fileURL) ??
     asString(data.fileUrl) ??
     asString(data.mediaUrl) ??
+    asString(asRecord(data.content)?.URL) ??
     asString(asRecord(data.content)?.url) ??
     asString(asRecord(data.content)?.fileURL) ??
     asString(asRecord(data.content)?.fileUrl) ??

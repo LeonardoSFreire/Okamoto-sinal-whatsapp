@@ -144,6 +144,11 @@ async function main(): Promise<void> {
     const batches: Row[][] = [];
     for (let i = 0; i < rows.length; i += batchSize) batches.push(rows.slice(i, i + batchSize));
     const written = await runPool(batches, concurrency);
+    if (written === 0) {
+      throw new Error(
+        "No progress while classifying messages. Check OPENAI_API_KEY or OpenRouter settings.",
+      );
+    }
     grandTotal += written;
 
     const elapsed = (Date.now() - startedAt) / 1000;
