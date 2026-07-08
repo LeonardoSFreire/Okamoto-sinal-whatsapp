@@ -26,6 +26,7 @@ export interface RefreshJobResult {
   label: string;
   script: string;
   code: number;
+  detail?: string;
 }
 
 export interface RefreshRun {
@@ -55,6 +56,19 @@ interface Job {
   env?: Record<string, string>;
 }
 
+function resolveClassifyProvider(): string {
+  const explicit = process.env.CLASSIFY_PROVIDER?.trim();
+  if (explicit) return explicit;
+  if (process.env.OPENAI_API_KEY?.trim()) return "openai";
+  if (
+    process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY?.trim() &&
+    process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL?.trim()
+  ) {
+    return "openrouter";
+  }
+  return "openai";
+}
+
 // Same jobs (and cheap-provider defaults) the standalone refresh-all script
 // used, kept here so the API and the scheduler share one definition.
 const JOBS: Job[] = [
@@ -62,7 +76,7 @@ const JOBS: Job[] = [
     label: "Classificar mensagens novas",
     script: "backfill-text-full",
     env: {
-      CLASSIFY_PROVIDER: process.env.CLASSIFY_PROVIDER ?? "openrouter",
+      CLASSIFY_PROVIDER: resolveClassifyProvider(),
       CONCURRENCY: process.env.CONCURRENCY ?? "6",
       BATCH_SIZE: process.env.BATCH_SIZE ?? "15",
       PAGE: process.env.PAGE ?? "900",
@@ -179,17 +193,33 @@ export async function startRefreshRun(
   }
 }
 
-function spawnJob(job: Job): Promise<number> {
+function spawnJob(job: Job): Promise<{ code: number; detail?: string }> {
   return new Promise((resolve) => {
+    let tail = "";
+    const pushTail = (chunk: string) => {
+      tail = (tail + chunk).slice(-4000);
+    };
     const child = spawn(
       "pnpm",
       ["--filter", "@workspace/scripts", "run", job.script],
-      { stdio: "inherit", env: { ...process.env, ...job.env } },
+      { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...job.env } },
     );
-    child.on("close", (code) => resolve(code ?? 1));
+    child.stdout.on("data", (buf) => {
+      const text = String(buf);
+      process.stdout.write(text);
+      pushTail(text);
+    });
+    child.stderr.on("data", (buf) => {
+      const text = String(buf);
+      process.stderr.write(text);
+      pushTail(text);
+    });
+    child.on("close", (code) =>
+      resolve({ code: code ?? 1, detail: tail.trim() || undefined }),
+    );
     child.on("error", (err) => {
       console.error(`spawn error (${job.script}): ${err.message}`);
-      resolve(1);
+      resolve({ code: 1, detail: err.message });
     });
   });
 }
@@ -204,8 +234,13 @@ export async function executeRefreshRun(
   try {
     const results: RefreshJobResult[] = [];
     for (const job of JOBS) {
-      const code = await spawnJob(job);
-      results.push({ label: job.label, script: job.script, code });
+      const result = await spawnJob(job);
+      results.push({
+        label: job.label,
+        script: job.script,
+        code: result.code,
+        detail: result.detail,
+      });
     }
     const failed = results.filter((r) => r.code !== 0);
     const status: RefreshStatus = failed.length > 0 ? "failed" : "completed";
