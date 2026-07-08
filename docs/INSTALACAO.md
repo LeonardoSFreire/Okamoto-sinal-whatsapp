@@ -86,17 +86,15 @@ pnpm --filter @workspace/scripts run configure-uazapi-webhook
 
 ## 6. Easypanel
 
+Use o modo **Dockerfile**.
+
 ### Build command
 
-```bash
-pnpm install && pnpm run build
-```
+Deixe vazio.
 
 ### Start command
 
-```bash
-pnpm start
-```
+Deixe vazio.
 
 ### Variaveis
 
@@ -109,6 +107,10 @@ Use:
 ```text
 /api/healthz
 ```
+
+### Porta
+
+Use `8080`.
 
 ### Setup/status
 

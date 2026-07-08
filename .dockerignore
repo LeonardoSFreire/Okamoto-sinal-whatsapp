@@ -1,0 +1,11 @@
+.git
+.gitignore
+.DS_Store
+node_modules
+artifacts/api-server/dist
+artifacts/sinal-web/dist
+coverage
+tmp
+.env
+.env.*
+!.env.example

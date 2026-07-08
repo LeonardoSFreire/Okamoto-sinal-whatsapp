@@ -49,23 +49,15 @@ Abra `http://localhost:5173`.
 
 ## Easypanel
 
-Para subir no Easypanel:
+Para subir no Easypanel, use a opcao **Dockerfile**.
 
 1. Configure as variaveis do `.env.example`
-2. Rode as migrations no Postgres
-3. Build command:
-
-```bash
-pnpm install && pnpm run build
-```
-
-4. Start command:
-
-```bash
-pnpm start
-```
-
-5. Exponha o dominio publico e preencha `PUBLIC_BASE_URL`
+2. Aponte para este repositorio
+3. Selecione `Dockerfile` como modo de construcao
+4. Nao precisa informar build command
+5. Nao precisa informar start command
+6. Exponha a porta `8080`
+7. Exponha o dominio publico e preencha `PUBLIC_BASE_URL`
 
 ## Banco
 
