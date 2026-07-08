@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +7,6 @@ import { TimeWindowProvider } from "@/lib/timeWindow";
 import { Loader2 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
-import Login from "@/pages/login";
 import Overview from "@/pages/overview";
 import Privado from "@/pages/privado";
 import Grupos from "@/pages/grupos";
@@ -23,7 +21,6 @@ const queryClient = new QueryClient();
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { data, isLoading, error } = useMe();
-  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -37,11 +34,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (error || !data?.user) {
-    return <Login />;
+  if (error) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0A0A0C] text-[#ECECF1] px-6 text-center">
+        <h1 className="font-display font-semibold text-2xl tracking-wide">Sinal</h1>
+        <p className="text-sm text-[#8C8C99] mt-3 max-w-[420px]">
+          O backend nao respondeu como esperado. Verifique a API e a configuracao do banco.
+        </p>
+      </div>
+    );
   }
 
-  return <>{children}</>;
+  return data?.user ? <>{children}</> : null;
 }
 
 function Router() {

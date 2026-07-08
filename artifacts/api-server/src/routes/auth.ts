@@ -1,12 +1,13 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
-import { supabase } from "../lib/supabase";
 import { pool } from "@workspace/db";
 import {
-  createSessionToken,
-  setSessionCookie,
   clearSessionCookie,
+  createSessionToken,
+  getLocalAuthContext,
+  isAuthDisabled,
   requireAuth,
+  setSessionCookie,
   type AuthedRequest,
 } from "../lib/auth";
 
@@ -18,13 +19,29 @@ const loginSchema = z.object({
 });
 
 router.post("/auth/login", async (req, res) => {
+  if (isAuthDisabled()) {
+    const user = getLocalAuthContext();
+    setSessionCookie(res, createSessionToken(user));
+    res.json({
+      user: { id: user.userId, email: user.email, tenantId: user.tenantId },
+      mode: "single-user",
+    });
+    return;
+  }
+
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_credentials_format" });
     return;
   }
-  const { email, password } = parsed.data;
 
+  const { supabase } = await import("../lib/supabase");
+  if (!supabase) {
+    res.status(503).json({ error: "auth_provider_unavailable" });
+    return;
+  }
+
+  const { email, password } = parsed.data;
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -35,7 +52,6 @@ router.post("/auth/login", async (req, res) => {
     return;
   }
 
-  // Resolve tenant from profiles.
   const { rows } = await pool.query<{ tenant_id: string }>(
     "select tenant_id from profiles where id = $1",
     [data.user.id],
@@ -64,7 +80,7 @@ router.post("/auth/logout", (_req, res) => {
 });
 
 router.get("/auth/me", requireAuth, (req: AuthedRequest, res) => {
-  res.json({ user: req.auth });
+  res.json({ user: req.auth, authDisabled: isAuthDisabled() });
 });
 
 export default router;

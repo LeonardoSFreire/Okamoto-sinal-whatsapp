@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   );
 
   const files = readdirSync(migrationsDir)
-    .filter((f) => f.endsWith(".sql"))
+    .filter((f) => f.endsWith(".sql") && !f.startsWith("._"))
     .sort();
 
   const applied = new Set(

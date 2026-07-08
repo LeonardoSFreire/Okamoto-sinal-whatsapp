@@ -14,6 +14,7 @@
     "build-topics": "tsx ./src/build-topics.ts",
     "build-mentions": "tsx ./src/build-mentions.ts",
     "refresh-all": "tsx ./src/refresh-all.ts",
+    "configure-uazapi-webhook": "tsx ./src/configure-uazapi-webhook.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

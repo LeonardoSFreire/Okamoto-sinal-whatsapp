@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    exclude: ["src/**/._*.ts"],
     // Every suite builds throwaway fixtures (whatsapp_messages, etc.) in the
     // SAME local Postgres with the SAME table names, so running suites in
     // parallel races on DDL. Force sequential execution across files.

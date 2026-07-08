@@ -5,10 +5,7 @@ import type { AuthedRequest } from "./auth";
 // Shared scoping constants/helpers. Every data query must be scoped by the
 // authenticated tenant (req.auth.tenantId) AND, for whatsapp_messages reads, by
 // the WhatsApp owner phone.
-export const OWNER = process.env.WHATSAPP_OWNER;
-if (!OWNER) {
-  throw new Error("WHATSAPP_OWNER is required.");
-}
+export const OWNER = process.env.WHATSAPP_OWNER ?? "";
 
 // Builds a SQL fragment that EXCLUDES support-group rows for the given message
 // alias, pushing its params onto `params`. The support-group list is now
@@ -39,6 +36,10 @@ export function requireOwnerTenant(
   res: Response,
   next: NextFunction,
 ): void {
+  if (!OWNER) {
+    res.status(503).json({ error: "whatsapp_owner_not_configured" });
+    return;
+  }
   if (req.auth?.tenantId !== OWNER_TENANT_ID) {
     res.status(403).json({ error: "forbidden" });
     return;

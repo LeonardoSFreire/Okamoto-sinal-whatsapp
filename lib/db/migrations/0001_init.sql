@@ -5,6 +5,18 @@
 
 -- Multi-tenant from day 1: tenant_id + RLS on every table.
 
+create extension if not exists pgcrypto;
+
+-- Plain Postgres compatibility outside Supabase: some legacy policies depend on
+-- auth.uid(). When running in Easypanel/Postgres directly, provide a minimal
+-- stub so the migration remains valid even without the Supabase auth schema.
+create schema if not exists auth;
+create or replace function auth.uid() returns uuid
+  language sql stable
+as $$
+  select null::uuid
+$$;
+
 -- ============================================================
 -- Tenancy
 -- ============================================================
@@ -13,6 +25,10 @@ create table if not exists tenants (
   name text,
   created_at timestamptz not null default now()
 );
+
+insert into tenants (id, name)
+values ('00000000-0000-0000-0000-000000000001', 'Local')
+on conflict (id) do nothing;
 
 -- profiles maps a Supabase auth user -> tenant
 create table if not exists profiles (

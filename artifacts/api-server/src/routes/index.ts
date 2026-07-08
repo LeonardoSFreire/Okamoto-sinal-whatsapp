@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import setupRouter from "./setup";
 import authRouter from "./auth";
 import metricsRouter from "./metrics";
 import topicsRouter from "./topics";
@@ -13,11 +14,14 @@ import mediaRouter from "./media";
 import googleRouter from "./google";
 import searchRouter from "./search";
 import refreshRouter from "./refresh";
+import webhooksRouter from "./webhooks";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(setupRouter);
 router.use(authRouter);
+router.use(webhooksRouter);
 // Mounted before the authed routers: its public OAuth callback must be reachable
 // without a session. Each authed router calls requireAuth with no path, so the
 // first one (metrics) would otherwise 401 every unauthenticated request.

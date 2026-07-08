@@ -1,10 +1,14 @@
 import crypto from "node:crypto";
 import type { Request, Response, NextFunction } from "express";
+import { MVP_TENANT_ID } from "@workspace/db";
 
-const SECRET = process.env.SESSION_SECRET;
-if (!SECRET) {
-  throw new Error("SESSION_SECRET is required for auth.");
-}
+const AUTH_DISABLED =
+  process.env.AUTH_DISABLED !== "0" &&
+  process.env.AUTH_DISABLED !== "false";
+
+const SECRET = process.env.SESSION_SECRET ?? "local-dev-session-secret";
+const LOCAL_USER_ID = process.env.LOCAL_USER_ID ?? "local-user";
+const LOCAL_USER_EMAIL = process.env.LOCAL_USER_EMAIL ?? "local@sinal.local";
 
 export const SESSION_COOKIE = "sinal_session";
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
@@ -22,6 +26,10 @@ export interface AuthContext {
   email: string | null;
 }
 
+export interface AuthedRequest extends Request {
+  auth?: AuthContext;
+}
+
 function b64url(input: Buffer | string): string {
   return Buffer.from(input)
     .toString("base64")
@@ -31,12 +39,22 @@ function b64url(input: Buffer | string): string {
 }
 
 function sign(data: string): string {
-  return b64url(crypto.createHmac("sha256", SECRET!).update(data).digest());
+  return b64url(crypto.createHmac("sha256", SECRET).update(data).digest());
 }
 
-export function createSessionToken(
-  ctx: Omit<AuthContext, never>,
-): string {
+export function isAuthDisabled(): boolean {
+  return AUTH_DISABLED;
+}
+
+export function getLocalAuthContext(): AuthContext {
+  return {
+    userId: LOCAL_USER_ID,
+    tenantId: MVP_TENANT_ID,
+    email: LOCAL_USER_EMAIL,
+  };
+}
+
+export function createSessionToken(ctx: AuthContext): string {
   const payload: SessionPayload = {
     userId: ctx.userId,
     tenantId: ctx.tenantId,
@@ -53,7 +71,6 @@ export function verifySessionToken(token: string): SessionPayload | null {
   const body = token.slice(0, dot);
   const sig = token.slice(dot + 1);
   const expected = sign(body);
-  // constant-time compare
   if (
     sig.length !== expected.length ||
     !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
@@ -73,9 +90,6 @@ export function verifySessionToken(token: string): SessionPayload | null {
   }
 }
 
-// The app runs inside a cross-site iframe (the Replit preview), so the session
-// cookie must be SameSite=None + Secure (and Partitioned for CHIPS) or browsers
-// will refuse to send it back, making logins appear to "not stick".
 export function setSessionCookie(res: Response, token: string): void {
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -96,15 +110,17 @@ export function clearSessionCookie(res: Response): void {
   });
 }
 
-export interface AuthedRequest extends Request {
-  auth?: AuthContext;
-}
-
 export function requireAuth(
   req: AuthedRequest,
   res: Response,
   next: NextFunction,
 ): void {
+  if (AUTH_DISABLED) {
+    req.auth = getLocalAuthContext();
+    next();
+    return;
+  }
+
   const token = (req.cookies?.[SESSION_COOKIE] as string | undefined) ?? null;
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) {
