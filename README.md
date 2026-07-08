@@ -86,7 +86,7 @@ https://seu-dominio/api/webhooks/uazapi?secret=SEU_SEGREDO
 
 Configuracao recomendada na UAZAPI:
 
-- `events: ["messages"]`
+- `events: ["messages", "messages_update"]`
 - `excludeMessages: ["wasSentByApi"]`
 
 Script auxiliar para configurar o webhook na UAZAPI:

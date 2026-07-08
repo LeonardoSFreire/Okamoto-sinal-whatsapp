@@ -57,9 +57,9 @@ router.post("/webhooks/uazapi", async (req, res) => {
   if (!normalized) {
     await pool.query(
       `update webhook_events
-          set processed_at = now(), status = 'ignored'
+          set processed_at = now(), status = 'ignored', error = $2
         where id = $1`,
-      [webhookEventId],
+      [webhookEventId, "unsupported_or_unmapped_payload"],
     );
     res.json({ ok: true, ignored: true, event });
     return;

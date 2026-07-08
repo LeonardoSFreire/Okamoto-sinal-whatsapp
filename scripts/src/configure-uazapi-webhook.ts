@@ -15,7 +15,7 @@ async function main(): Promise<void> {
 
   const payload = {
     url: webhookUrl,
-    events: ["messages"],
+    events: ["messages", "messages_update"],
     excludeMessages: ["wasSentByApi"],
   };
 

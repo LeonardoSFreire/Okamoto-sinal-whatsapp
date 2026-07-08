@@ -73,7 +73,7 @@ Configuracao recomendada:
 ```json
 {
   "url": "https://seu-dominio/api/webhooks/uazapi?secret=SEU_SEGREDO",
-  "events": ["messages"],
+  "events": ["messages", "messages_update"],
   "excludeMessages": ["wasSentByApi"]
 }
 ```
